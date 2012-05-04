@@ -76,7 +76,7 @@ file for every revision listed below for the following reasons:
 
     > KFSI-653 KITT-3043 add duplicate invoice number checking to DV and PREQ will check for duplicate DV numbers
 
-<h2><a name="files">Files</a></h2>
+<h2>Files</h2>
 
 Files **created** for this modification (8 files)
 
