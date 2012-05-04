@@ -1,0 +1,35 @@
+------------------------------------------------------------------------
+r24826 | hlo@CATNET.ARIZONA.EDU | 2012-03-20 13:42:03 -0700 (Tue, 20 Mar 2012) | 4 lines
+Changed paths:
+   A /financial-system/kfs-cfg-dbs/trunk/update/KITT-3083.xml
+
+KFSI-653
+KFSI-5994
+KITT-3083
+Adding changelog to add invoice numbers to DVs and add KIM data.
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+r24840 | wliang@CATNET.ARIZONA.EDU | 2012-03-20 15:25:32 -0700 (Tue, 20 Mar 2012) | 1 line
+Changed paths:
+   M /financial-system/kfs/trunk/.classpath
+   M /financial-system/kfs/trunk/work/src/arizona-ApplicationResources.properties
+   A /financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/FPKeyConstants.java
+   A /financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/DisbursementVoucherSourceAccountingLine.java
+   A /financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/DisbursementVoucherSourceAccountingLineExtension.java
+   A /financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/datadictionary/DisbursementVoucherSourceAccountingLine.xml
+   A /financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/datadictionary/DisbursementVoucherSourceAccountingLineExtension.xml
+   M /financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/UaDisbursementVoucherDocument.java
+   M /financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/datadictionary/DisbursementVoucherDocument.xml
+   M /financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/validation/configuration/DisbursementVoucherValidation.xml
+   A /financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/validation/impl/DisbursementVoucherInvoiceNumberEnteredValidation.java
+   M /financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/validation/impl/UaDisbursementVoucherDocumentPreRules.java
+   M /financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/ojb-fp.xml
+   A /financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/service/UaDisbursementVoucherInvoiceService.java
+   A /financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/service/impl/UaDisbursementVoucherInvoiceServiceImpl.java
+   M /financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/spring-fp.xml
+   M /financial-system/kfs/trunk/work/src/edu/arizona/kfs/module/purap/AzPurapConstants.java
+   M /financial-system/kfs/trunk/work/src/edu/arizona/kfs/module/purap/UaPurapKeyConstants.java
+   M /financial-system/kfs/trunk/work/src/edu/arizona/kfs/module/purap/document/web/struts/PaymentRequestAction.java
+
+KFSI-653 KITT-3043 add duplicate invoice number checking to DV and PREQ will check for duplicate DV numbers
+------------------------------------------------------------------------

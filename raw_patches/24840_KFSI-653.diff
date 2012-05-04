@@ -1,0 +1,1140 @@
+Index: financial-system/kfs/trunk/work/src/arizona-ApplicationResources.properties
+===================================================================
+--- financial-system/kfs/trunk/work/src/arizona-ApplicationResources.properties	(revision 24839)
++++ financial-system/kfs/trunk/work/src/arizona-ApplicationResources.properties	(revision 24840)
+@@ -135,5 +135,8 @@
+ 
+ error.po.not.fully.received.and.invoiced=PO indicates receiving is required and it is not fully received and invoiced, so cannot be closed.
+ 
++message.dv.duplicate.invoice=Warning: A disbursement voucher and/or payment request for the specified invoice number and payee already exists.  Do you want to continue?[br][br]Disbursement Voucher(s): {0}[br]Payment Request(s):{1}
++message.preq.duplicate.dv.invoice=Warning: A disbursement voucher for the specified invoice number and vendor already exists.  Do you want to continue?[br][br]Disbursement Voucher(s):{0}
++
+ #Current balance lookup by MSU
+ error.currentbalance.lookup.criteria.required = At least one lookup criteria [Account/Org/FO] is required.
+\ No newline at end of file
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/service/impl/UaDisbursementVoucherInvoiceServiceImpl.java
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/service/impl/UaDisbursementVoucherInvoiceServiceImpl.java	(revision 0)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/service/impl/UaDisbursementVoucherInvoiceServiceImpl.java	(revision 24840)
+@@ -0,0 +1,100 @@
++/*
++ * Copyright 2012 The Kuali Foundation.
++ * 
++ * Licensed under the Educational Community License, Version 1.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ * http://www.opensource.org/licenses/ecl1.php
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package edu.arizona.kfs.fp.service.impl;
++
++import java.util.Collection;
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.Map;
++import java.util.Set;
++import java.util.TreeSet;
++
++import org.apache.commons.lang.StringUtils;
++import org.kuali.kfs.fp.businessobject.DisbursementVoucherPayeeDetail;
++import org.kuali.kfs.fp.document.DisbursementVoucherDocument;
++import org.kuali.kfs.module.purap.PurapConstants;
++import org.kuali.kfs.module.purap.document.PaymentRequestDocument;
++import org.kuali.kfs.sys.KFSPropertyConstants;
++import org.kuali.kfs.sys.context.SpringContext;
++import org.kuali.rice.kns.document.Document;
++import org.kuali.rice.kns.service.BusinessObjectService;
++import org.kuali.rice.kns.service.DataDictionaryService;
++
++import edu.arizona.kfs.fp.service.UaDisbursementVoucherInvoiceService;
++
++public class UaDisbursementVoucherInvoiceServiceImpl implements UaDisbursementVoucherInvoiceService {
++
++    private DataDictionaryService dataDictionaryService = null;
++    private BusinessObjectService businessObjectService = null;
++    
++    @Override
++    public Set<String> findDisbursementVouchersWithDuplicateInvoices(String dvDocumentNumber, String payeeId, String payeeType, String invoiceNumber) {
++        Map<String, Object> fieldValues = new HashMap<String, Object>();
++        fieldValues.put(KFSPropertyConstants.DV_PAYEE_DETAIL + "." + KFSPropertyConstants.DISB_VCHR_PAYEE_ID_NUMBER, payeeId);
++        fieldValues.put(KFSPropertyConstants.DV_PAYEE_DETAIL + ".disbursementVoucherPayeeTypeCode", payeeType);
++        fieldValues.put(KFSPropertyConstants.SOURCE_ACCOUNTING_LINES + "." + KFSPropertyConstants.EXTENSION + ".invoiceNumber", invoiceNumber);
++        
++        Class<? extends Document> dvClass = getDataDictionaryService().getDocumentClassByTypeName("DV");
++        Collection<DisbursementVoucherDocument> dvs = getBusinessObjectService().findMatchingOrderBy(dvClass, fieldValues, KFSPropertyConstants.DOCUMENT_NUMBER, true);
++        Set<String> results = new TreeSet<String>();
++        for (Iterator<DisbursementVoucherDocument> i = dvs.iterator(); i.hasNext(); ) {
++            DisbursementVoucherDocument dv = i.next();
++            if (!StringUtils.equals(dvDocumentNumber, dv.getDocumentNumber())) {
++                results.add(dv.getDocumentNumber());
++            }
++        }
++        return results;
++    }
++
++    @Override
++    public Set<String> findPaymentRequestsWithDuplicateInvoices(String vendorHeaderGeneratedIdentifier, String vendorDetailAssignedIdentifier, String invoiceNumber) {
++        Map<String, Object> fieldValues = new HashMap<String, Object>();
++        fieldValues.put(KFSPropertyConstants.VENDOR_HEADER_GENERATED_ID, vendorHeaderGeneratedIdentifier);
++        fieldValues.put(KFSPropertyConstants.VENDOR_DETAIL_ASSIGNED_ID, vendorDetailAssignedIdentifier);
++        fieldValues.put("upper(invoiceNumber)", invoiceNumber.toUpperCase());
++        
++        Class<? extends Document> preqClass = SpringContext.getBean(DataDictionaryService.class).getDocumentClassByTypeName(PurapConstants.PurapDocTypeCodes.PAYMENT_REQUEST_DOCUMENT);
++        Collection<PaymentRequestDocument> preqs = SpringContext.getBean(BusinessObjectService.class).findMatchingOrderBy(preqClass, fieldValues, KFSPropertyConstants.DOCUMENT_NUMBER, true);
++        Set<String> results = new TreeSet<String>();
++        for (Iterator<PaymentRequestDocument> i = preqs.iterator(); i.hasNext(); ) {
++            PaymentRequestDocument preq = i.next();
++            results.add(preq.getDocumentNumber());
++        }
++        return results;
++    }
++    
++    /**
++     * Gets the dataDictionaryService attribute. 
++     * @return Returns the dataDictionaryService.
++     */
++    public DataDictionaryService getDataDictionaryService() {
++        if (dataDictionaryService == null) {
++            dataDictionaryService = SpringContext.getBean(DataDictionaryService.class);
++        }
++        return dataDictionaryService;
++    }
++
++    /**
++     * Gets the businessObjectService attribute. 
++     * @return Returns the businessObjectService.
++     */
++    public BusinessObjectService getBusinessObjectService() {
++        if (businessObjectService == null) {
++            businessObjectService = SpringContext.getBean(BusinessObjectService.class);
++        }
++        return businessObjectService;
++    }
++}
+
+Property changes on: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/service/impl/UaDisbursementVoucherInvoiceServiceImpl.java
+___________________________________________________________________
+Added: svn:mime-type
+   + text/plain
+
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/service/UaDisbursementVoucherInvoiceService.java
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/service/UaDisbursementVoucherInvoiceService.java	(revision 0)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/service/UaDisbursementVoucherInvoiceService.java	(revision 24840)
+@@ -0,0 +1,41 @@
++/*
++ * Copyright 2012 The Kuali Foundation.
++ * 
++ * Licensed under the Educational Community License, Version 1.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ * http://www.opensource.org/licenses/ecl1.php
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package edu.arizona.kfs.fp.service;
++
++import java.util.Set;
++
++import org.kuali.kfs.fp.document.DisbursementVoucherDocument;
++
++public interface UaDisbursementVoucherInvoiceService {
++    /**
++     * Returns a set of document IDs that use the same payee ID/type/invoice number
++     * @param dvDocumentNumber doc nbr of the DV being submitted, if applicable.  Can be null.  This doc nbr will not be in the returned set
++     * @param payeeId employee ID or vendor number
++     * @param payeeType the payee type code stored in {@link org.kuali.kfs.fp.businessobject.DisbursementVoucherPayeeDetail#setDisbursementVoucherPayeeTypeCode(String)}
++     * @param invoiceNumber should not be null
++     * @return
++     */
++    public Set<String> findDisbursementVouchersWithDuplicateInvoices(String dvDocumentNumber, String payeeId, String payeeType, String invoiceNumber);
++    
++    /**
++     * Returns a set of PREQ document IDs that use the same vendor and invoice number
++     * @param vendorHeaderGeneratedIdentifier
++     * @param vendorDetailAssignedIdentifier
++     * @param invoiceNumber should not be null
++     * @return
++     */
++    public Set<String> findPaymentRequestsWithDuplicateInvoices(String vendorHeaderGeneratedIdentifier, String vendorDetailAssignedIdentifier, String invoiceNumber);
++}
+
+Property changes on: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/service/UaDisbursementVoucherInvoiceService.java
+___________________________________________________________________
+Added: svn:mime-type
+   + text/plain
+
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/DisbursementVoucherSourceAccountingLineExtension.java
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/DisbursementVoucherSourceAccountingLineExtension.java	(revision 0)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/DisbursementVoucherSourceAccountingLineExtension.java	(revision 24840)
+@@ -0,0 +1,87 @@
++/*
++ * Copyright 2012 The Kuali Foundation.
++ * 
++ * Licensed under the Educational Community License, Version 1.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ * http://www.opensource.org/licenses/ecl1.php
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package edu.arizona.kfs.fp.businessobject;
++
++import org.kuali.kfs.sys.KFSConstants;
++import org.kuali.rice.kns.bo.PersistableBusinessObjectExtensionBase;
++
++public class DisbursementVoucherSourceAccountingLineExtension extends PersistableBusinessObjectExtensionBase {
++    private String documentNumber;
++    private Integer sequenceNumber; 
++    private String financialDocumentLineTypeCode;
++    private String invoiceNumber;
++
++    public DisbursementVoucherSourceAccountingLineExtension() {
++        financialDocumentLineTypeCode = KFSConstants.SOURCE_ACCT_LINE_TYPE_CODE;
++    }
++
++    /**
++     * Gets the documentNumber attribute. 
++     * @return Returns the documentNumber.
++     */
++    public String getDocumentNumber() {
++        return documentNumber;
++    }
++    /**
++     * Sets the documentNumber attribute value.
++     * @param documentNumber The documentNumber to set.
++     */
++    public void setDocumentNumber(String documentNumber) {
++        this.documentNumber = documentNumber;
++    }
++    /**
++     * Gets the sequenceNumber attribute. 
++     * @return Returns the sequenceNumber.
++     */
++    public Integer getSequenceNumber() {
++        return sequenceNumber;
++    }
++    /**
++     * Sets the sequenceNumber attribute value.
++     * @param sequenceNumber The sequenceNumber to set.
++     */
++    public void setSequenceNumber(Integer sequenceNumber) {
++        this.sequenceNumber = sequenceNumber;
++    }
++    /**
++     * Gets the financialDocumentLineTypeCode attribute. 
++     * @return Returns the financialDocumentLineTypeCode.
++     */
++    public String getFinancialDocumentLineTypeCode() {
++        return financialDocumentLineTypeCode;
++    }
++    /**
++     * Sets the financialDocumentLineTypeCode attribute value.
++     * @param financialDocumentLineTypeCode The financialDocumentLineTypeCode to set.
++     */
++    public void setFinancialDocumentLineTypeCode(String financialDocumentLineTypeCode) {
++        this.financialDocumentLineTypeCode = financialDocumentLineTypeCode;
++    }
++    /**
++     * Gets the invoiceNumber attribute. 
++     * @return Returns the invoiceNumber.
++     */
++    public String getInvoiceNumber() {
++        return invoiceNumber;
++    }
++    /**
++     * Sets the invoiceNumber attribute value.
++     * @param invoiceNumber The invoiceNumber to set.
++     */
++    public void setInvoiceNumber(String invoiceNumber) {
++        this.invoiceNumber = invoiceNumber;
++    }
++}
+
+Property changes on: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/DisbursementVoucherSourceAccountingLineExtension.java
+___________________________________________________________________
+Added: svn:executable
+   + *
+Added: svn:mime-type
+   + text/plain
+
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/DisbursementVoucherSourceAccountingLine.java
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/DisbursementVoucherSourceAccountingLine.java	(revision 0)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/DisbursementVoucherSourceAccountingLine.java	(revision 24840)
+@@ -0,0 +1,47 @@
++/*
++ * Copyright 2012 The Kuali Foundation.
++ * 
++ * Licensed under the Educational Community License, Version 1.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ * http://www.opensource.org/licenses/ecl1.php
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package edu.arizona.kfs.fp.businessobject;
++
++import java.util.Map;
++
++import org.apache.ojb.broker.PersistenceBroker;
++import org.apache.ojb.broker.PersistenceBrokerException;
++import org.kuali.kfs.sys.businessobject.SourceAccountingLine;
++import org.kuali.rice.kns.bo.PersistableBusinessObjectExtension;
++
++public class DisbursementVoucherSourceAccountingLine extends SourceAccountingLine {
++    public static final String EXTENSION_INVOICE_NUMBER = "extension.invoiceNumber";
++    
++    
++    /**
++     * @see org.kuali.kfs.sys.businessobject.AccountingLineBase#getValuesMap()
++     */
++    @Override
++    public Map getValuesMap() {
++        Map ret = super.getValuesMap();
++        ret.put(EXTENSION_INVOICE_NUMBER, ((DisbursementVoucherSourceAccountingLineExtension) getExtension()).getInvoiceNumber());
++        return ret;
++    }
++
++
++    /**
++     * @see org.kuali.rice.kns.bo.PersistableBusinessObjectBase#getExtension()
++     */
++    @Override
++    public DisbursementVoucherSourceAccountingLineExtension getExtension() {
++        return (DisbursementVoucherSourceAccountingLineExtension) super.getExtension();
++    }
++}
+
+Property changes on: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/DisbursementVoucherSourceAccountingLine.java
+___________________________________________________________________
+Added: svn:executable
+   + *
+Added: svn:mime-type
+   + text/plain
+
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/datadictionary/DisbursementVoucherSourceAccountingLineExtension.xml
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/datadictionary/DisbursementVoucherSourceAccountingLineExtension.xml	(revision 0)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/datadictionary/DisbursementVoucherSourceAccountingLineExtension.xml	(revision 24840)
+@@ -0,0 +1,32 @@
++<?xml version="1.0" encoding="UTF-8"?><beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p" xsi:schemaLocation="http://www.springframework.org/schema/beans         http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
++<!--
++ Copyright 2006-2008 The Kuali Foundation
++ 
++ Licensed under the Educational Community License, Version 2.0 (the "License");
++ you may not use this file except in compliance with the License.
++ You may obtain a copy of the License at
++ 
++ http://www.opensource.org/licenses/ecl2.php
++ 
++ Unless required by applicable law or agreed to in writing, software
++ distributed under the License is distributed on an "AS IS" BASIS,
++ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ See the License for the specific language governing permissions and
++ limitations under the License.
++-->
++
++  <bean id="DisbursementVoucherDocumentationLocation" parent="DisbursementVoucherDocumentationLocation-parentBean"/>
++
++  <bean id="DisbursementVoucherDocumentationLocation-parentBean" abstract="true" parent="BusinessObjectEntry">
++    <property name="businessObjectClass" value="edu.arizona.kfs.fp.businessobject.DisbursementVoucherSourceAccountingLineExtension"/>
++    <property name="objectLabel" value="Disbursement Voucher Accounting Line Invoice Extension"/>
++    <property name="attributes">
++      <list>
++        <ref bean="DisbursementVoucherDocumentationLocation-invoiceNumber"/>
++      </list>
++    </property>
++  </bean>
++
++
++  <bean id="DisbursementVoucherDocumentationLocation-invoiceNumber" parent="PaymentRequestDocument-invoiceNumber"/>
++</beans>
+
+Property changes on: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/datadictionary/DisbursementVoucherSourceAccountingLineExtension.xml
+___________________________________________________________________
+Added: svn:executable
+   + *
+Added: svn:mime-type
+   + text/plain
+
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/datadictionary/DisbursementVoucherSourceAccountingLine.xml
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/datadictionary/DisbursementVoucherSourceAccountingLine.xml	(revision 0)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/datadictionary/DisbursementVoucherSourceAccountingLine.xml	(revision 24840)
+@@ -0,0 +1,11 @@
++<?xml version="1.0" encoding="UTF-8"?><beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p" xsi:schemaLocation="http://www.springframework.org/schema/beans         http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
++
++  <bean id="DisbursementVoucherSourceAccountingLine" parent="SourceAccountingLine">
++    <property name="businessObjectClass" value="edu.arizona.kfs.fp.businessobject.DisbursementVoucherSourceAccountingLine"/>
++    <property name="attributes">
++      <list merge="true">
++        <bean parent="DisbursementVoucherDocumentationLocation-invoiceNumber" p:name="extension.invoiceNumber" p:required="true" />
++      </list>
++    </property>
++  </bean>
++</beans>
+
+Property changes on: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/businessobject/datadictionary/DisbursementVoucherSourceAccountingLine.xml
+___________________________________________________________________
+Added: svn:executable
+   + *
+Added: svn:mime-type
+   + text/plain
+
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/spring-fp.xml
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/spring-fp.xml	(revision 24839)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/spring-fp.xml	(revision 24840)
+@@ -393,5 +393,7 @@
+ 		<property name="disbursementVoucherPaymentReasonService">
+ 			<ref bean="disbursementVoucherPaymentReasonService" />
+ 		</property>		
+-	</bean>			
++	</bean>
++	
++	<bean id="uaDisbursementVoucherInvoiceService" class="edu.arizona.kfs.fp.service.impl.UaDisbursementVoucherInvoiceServiceImpl" />
+ </beans>
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/FPKeyConstants.java
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/FPKeyConstants.java	(revision 0)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/FPKeyConstants.java	(revision 24840)
+@@ -0,0 +1,20 @@
++/*
++ * Copyright 2012 The Kuali Foundation.
++ * 
++ * Licensed under the Educational Community License, Version 1.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ * http://www.opensource.org/licenses/ecl1.php
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package edu.arizona.kfs.fp;
++
++public class FPKeyConstants {
++    public static final String MESSAGE_DV_DUPLICATE_INVOICE = "message.dv.duplicate.invoice";
++}
+
+Property changes on: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/FPKeyConstants.java
+___________________________________________________________________
+Added: svn:mime-type
+   + text/plain
+
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/ojb-fp.xml
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/ojb-fp.xml	(revision 24839)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/ojb-fp.xml	(revision 24840)
+@@ -728,7 +728,7 @@
+         <foreignkey field-ref="disbVchrBankCode" />
+     </reference-descriptor>   
+ 
+-    <collection-descriptor name="sourceAccountingLines" proxy="true" element-class-ref="org.kuali.kfs.sys.businessobject.SourceAccountingLine" collection-class="org.apache.ojb.broker.util.collections.ManageableArrayList" auto-retrieve="true" auto-update="object" auto-delete="object">
++    <collection-descriptor name="sourceAccountingLines" proxy="true" element-class-ref="edu.arizona.kfs.fp.businessobject.DisbursementVoucherSourceAccountingLine" collection-class="org.apache.ojb.broker.util.collections.ManageableArrayList" auto-retrieve="true" auto-update="object" auto-delete="object">
+         <orderby name="sequenceNumber" sort="ASC" />
+         <inverse-foreignkey field-ref="documentNumber" />
+ 				<query-customizer class="org.kuali.kfs.sys.dataaccess.impl.OjbQueryCustomizer">
+@@ -1384,4 +1384,93 @@
+     </reference-descriptor>
+ </class-descriptor>
+ 
++  <!-- KFSI-653 KITT-3043 DV accounting line extension table-->
++  <class-descriptor class="edu.arizona.kfs.fp.businessobject.DisbursementVoucherSourceAccountingLineExtension" table="FP_DV_ACCT_LINE_EXT_T">
++    <field-descriptor name="documentNumber" column="FDOC_NBR" jdbc-type="VARCHAR" primarykey="true" index="true" />
++    <field-descriptor name="sequenceNumber" column="FDOC_LINE_NBR" jdbc-type="INTEGER" primarykey="true" index="true" />
++    <field-descriptor name="financialDocumentLineTypeCode" column="FDOC_LN_TYP_CD" jdbc-type="VARCHAR" primarykey="true" />
++    <field-descriptor name="objectId" column="OBJ_ID" jdbc-type="VARCHAR" index="true" />
++    <field-descriptor name="versionNumber" column="VER_NBR" jdbc-type="BIGINT" locking="true" />
++    <field-descriptor name="invoiceNumber" column="INV_NBR" jdbc-type="VARCHAR"/>
++  </class-descriptor>
++
++  <!-- KFSI-653 KITT-3043 DV needs a new Accounting Line class to accept -->
++  <class-descriptor class="edu.arizona.kfs.fp.businessobject.DisbursementVoucherSourceAccountingLine" table="FP_ACCT_LINES_T">
++    <field-descriptor name="documentNumber" column="FDOC_NBR" jdbc-type="VARCHAR" primarykey="true" />
++    <field-descriptor name="sequenceNumber" column="FDOC_LINE_NBR" jdbc-type="INTEGER" primarykey="true" />
++    <field-descriptor name="financialDocumentLineTypeCode" column="FDOC_LN_TYP_CD" jdbc-type="VARCHAR" primarykey="true" />
++    <field-descriptor name="amount" column="FDOC_LINE_AMT" jdbc-type="DECIMAL" conversion="org.kuali.rice.kns.util.OjbKualiDecimalFieldConversion" />
++    <field-descriptor name="referenceOriginCode" column="FS_REF_ORIGIN_CD" jdbc-type="VARCHAR" />
++    <field-descriptor name="referenceNumber" column="FDOC_REF_NBR" jdbc-type="VARCHAR" />
++    <field-descriptor name="referenceTypeCode" column="FDOC_REF_TYP_CD" jdbc-type="VARCHAR" />
++    <field-descriptor name="overrideCode" column="FDOC_OVERRIDE_CD" jdbc-type="VARCHAR" />
++    <field-descriptor name="financialDocumentLineDescription" column="FDOC_LINE_DESC" jdbc-type="VARCHAR" />
++    <field-descriptor name="organizationReferenceId" column="ORG_REFERENCE_ID" jdbc-type="VARCHAR" />
++    <field-descriptor name="versionNumber" column="VER_NBR" jdbc-type="BIGINT" locking="true" />
++    <field-descriptor name="debitCreditCode" column="FDOC_LINE_DBCR_CD" jdbc-type="VARCHAR" />
++    <field-descriptor name="encumbranceUpdateCode" column="TRN_ENCUM_UPDT_CD" jdbc-type="VARCHAR" />
++    <field-descriptor name="postingYear" column="FDOC_POST_YR" jdbc-type="INTEGER" />
++    <field-descriptor name="chartOfAccountsCode" column="FIN_COA_CD" jdbc-type="VARCHAR" />
++    <field-descriptor name="accountNumber" column="ACCOUNT_NBR" jdbc-type="VARCHAR" />
++    <field-descriptor name="financialObjectCode" column="FIN_OBJECT_CD" jdbc-type="VARCHAR" />
++    <field-descriptor name="subAccountNumber" column="SUB_ACCT_NBR" jdbc-type="VARCHAR" />
++    <field-descriptor name="financialSubObjectCode" column="FIN_SUB_OBJ_CD" jdbc-type="VARCHAR" />
++    <field-descriptor name="projectCode" column="PROJECT_CD" jdbc-type="VARCHAR" />
++    <field-descriptor name="balanceTypeCode" column="FIN_BALANCE_TYP_CD" jdbc-type="VARCHAR" />
++    <field-descriptor name="objectId" column="OBJ_ID" jdbc-type="VARCHAR" index="true" />
++
++    <reference-descriptor name="chart" class-ref="org.kuali.kfs.coa.businessobject.Chart" auto-retrieve="true" auto-update="none" auto-delete="none" proxy="true">
++        <foreignkey field-ref="chartOfAccountsCode" />
++    </reference-descriptor>
++
++    <reference-descriptor name="account" class-ref="org.kuali.kfs.coa.businessobject.Account" auto-retrieve="true" auto-update="none" auto-delete="none" proxy="true">
++        <foreignkey field-ref="chartOfAccountsCode" />
++        <foreignkey field-ref="accountNumber" />
++    </reference-descriptor>
++
++    <reference-descriptor name="objectCode" class-ref="org.kuali.kfs.coa.businessobject.ObjectCode" auto-retrieve="true" auto-update="none" auto-delete="none" proxy="true">
++        <foreignkey field-ref="postingYear" />
++        <foreignkey field-ref="chartOfAccountsCode" />
++        <foreignkey field-ref="financialObjectCode" />
++    </reference-descriptor>
++
++    <reference-descriptor name="subAccount" class-ref="org.kuali.kfs.coa.businessobject.SubAccount" auto-retrieve="true" auto-update="none" auto-delete="none" proxy="true">
++        <foreignkey field-ref="chartOfAccountsCode" />
++        <foreignkey field-ref="accountNumber" />
++        <foreignkey field-ref="subAccountNumber" />
++    </reference-descriptor>
++
++    <reference-descriptor name="subObjectCode" class-ref="org.kuali.kfs.coa.businessobject.SubObjectCode" auto-retrieve="true" auto-update="none" auto-delete="none" proxy="true">
++        <foreignkey field-ref="postingYear" />
++        <foreignkey field-ref="chartOfAccountsCode" />
++        <foreignkey field-ref="accountNumber" />
++        <foreignkey field-ref="financialObjectCode" />
++        <foreignkey field-ref="financialSubObjectCode" />
++    </reference-descriptor>
++
++    <reference-descriptor name="project" class-ref="org.kuali.kfs.coa.businessobject.ProjectCode" auto-retrieve="true" auto-update="none" auto-delete="none" proxy="true">
++        <foreignkey field-ref="projectCode" />
++    </reference-descriptor>
++
++    <reference-descriptor name="balanceTyp" class-ref="org.kuali.kfs.coa.businessobject.BalanceType" auto-retrieve="true" auto-update="none" auto-delete="none" proxy="true">
++        <foreignkey field-ref="balanceTypeCode" />
++    </reference-descriptor>
++
++    <reference-descriptor name="referenceOrigin" class-ref="org.kuali.kfs.sys.businessobject.OriginationCode" auto-retrieve="true" auto-update="none" auto-delete="none" proxy="true">
++        <foreignkey field-ref="referenceOriginCode" />
++    </reference-descriptor>
++    
++    <reference-descriptor name="salesTax" class-ref="org.kuali.kfs.fp.businessobject.SalesTax" auto-retrieve="true" auto-update="object" auto-delete="object" proxy="true">
++    	<foreignkey field-ref="documentNumber"/>
++    	<foreignkey field-ref="financialDocumentLineTypeCode"/>
++    	<foreignkey field-ref="sequenceNumber"/>
++    </reference-descriptor>
++    
++    <!-- updating and deleting of the extension will be handled by this class, instead of OJB -->
++    <reference-descriptor name="extension" class-ref="edu.arizona.kfs.fp.businessobject.DisbursementVoucherSourceAccountingLineExtension" auto-retrieve="true" auto-update="object" auto-delete="object" proxy="false">
++    	<foreignkey field-ref="documentNumber"/>
++    	<foreignkey field-ref="sequenceNumber"/>
++    	<foreignkey field-ref="financialDocumentLineTypeCode"/>
++    </reference-descriptor>
++  </class-descriptor>
+ </descriptor-repository>
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/datadictionary/DisbursementVoucherDocument.xml
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/datadictionary/DisbursementVoucherDocument.xml	(revision 24839)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/datadictionary/DisbursementVoucherDocument.xml	(revision 24840)
+@@ -142,4 +142,34 @@
+       </map>
+     </property>  
+   </bean>
++
++  <bean id="DisbursementVoucherDocument-sourceAccountingLineGroup" parent="DisbursementVoucherDocument-sourceAccountingLineGroup-parentBean">  
++    <property name="accountingLineClass" value="edu.arizona.kfs.fp.businessobject.DisbursementVoucherSourceAccountingLine"/>
++  </bean>
++
++  <bean id="DisbursementVoucherDocument-accountingLineView" parent="DisbursementVoucherDocument-accountingLineView-parent">
++	  <property name="elements">
++		<list>
++			<bean parent="AccountingLineView-sequenceNumber"/>
++			<bean parent="AccountingLineView-lines">
++				<property name="lines">
++					<list>
++						<ref bean="accountingInformation"/>
++						<bean parent="AccountingLineView-line">
++							<property name="elementName" value="lineDescription"/>
++							<property name="fields">
++								<list>
++									<bean parent="AccountingLineView-field" p:name="financialDocumentLineDescription" p:overrideColSpan="2"/>
++									<bean parent="AccountingLineView-field" p:name="extension.invoiceNumber" p:required="true"/>
++								</list>
++							</property>
++						</bean>
++					</list>
++				</property>
++			</bean>
++			<bean parent="AccountingLineView-field" p:name="amount" p:required="true"/>
++			<bean parent="AccountingLineView-actions"/>
++		</list>
++	</property>
++  </bean>
+ </beans>
+\ No newline at end of file
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/UaDisbursementVoucherDocument.java
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/UaDisbursementVoucherDocument.java	(revision 24839)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/UaDisbursementVoucherDocument.java	(revision 24840)
+@@ -21,10 +21,12 @@
+ import org.kuali.kfs.fp.document.DisbursementVoucherDocument;
+ import org.kuali.kfs.sys.KFSConstants;
+ import org.kuali.kfs.sys.KFSPropertyConstants;
++import org.kuali.kfs.sys.businessobject.AccountingLine;
+ import org.kuali.kfs.sys.businessobject.Bank;
+ import org.kuali.kfs.sys.businessobject.GeneralLedgerPendingEntry;
+ import org.kuali.kfs.sys.businessobject.GeneralLedgerPendingEntrySequenceHelper;
+ import org.kuali.kfs.sys.businessobject.GeneralLedgerPendingEntrySourceDetail;
++import org.kuali.kfs.sys.businessobject.SourceAccountingLine;
+ import org.kuali.kfs.sys.context.SpringContext;
+ import org.kuali.kfs.vnd.businessobject.VendorAddress;
+ import org.kuali.kfs.vnd.businessobject.VendorDetail;
+@@ -39,6 +41,7 @@
+ import org.kuali.rice.kns.util.KNSConstants;
+ import org.kuali.rice.kns.util.ObjectUtils;
+ 
++import edu.arizona.kfs.fp.businessobject.DisbursementVoucherSourceAccountingLineExtension;
+ import edu.arizona.kfs.fp.businessobject.PaymentMethod;
+ import edu.arizona.kfs.fp.document.validation.impl.DisbursementVoucherHasNonAscii;
+ import edu.arizona.kfs.fp.service.UaPaymentMethodGeneralLedgerPendingEntryService;
+@@ -89,6 +92,14 @@
+                 synchronizeBankCodeWithPaymentMethod();
+             }
+         }
++        
++        // KFSI-653 KITT-3043 need to initialize extension primary key values because OJB doesn't do a good job
++        for (Object o : getSourceAccountingLines()) {
++            SourceAccountingLine accountingLine = (SourceAccountingLine) o;
++            DisbursementVoucherSourceAccountingLineExtension accountingLineExtension = (DisbursementVoucherSourceAccountingLineExtension) accountingLine.getExtension();
++            accountingLineExtension.setDocumentNumber(accountingLine.getDocumentNumber());
++            accountingLineExtension.setSequenceNumber(accountingLine.getSequenceNumber());
++        }
+     }
+ 
+     protected void synchronizeBankCodeWithPaymentMethod() {
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/validation/impl/UaDisbursementVoucherDocumentPreRules.java
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/validation/impl/UaDisbursementVoucherDocumentPreRules.java	(revision 24839)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/validation/impl/UaDisbursementVoucherDocumentPreRules.java	(revision 24840)
+@@ -16,23 +16,50 @@
+ package edu.arizona.kfs.fp.document.validation.impl;
+ 
+ import java.text.MessageFormat;
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.Collections;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++import java.util.TreeSet;
+ 
++import javax.mail.Session;
++
+ import org.apache.commons.lang.StringUtils;
++import org.kuali.kfs.fp.businessobject.DisbursementVoucherPayeeDetail;
+ import org.kuali.kfs.fp.businessobject.DisbursementVoucherWireTransfer;
+ import org.kuali.kfs.fp.document.DisbursementVoucherConstants;
+ import org.kuali.kfs.fp.document.DisbursementVoucherDocument;
+ import org.kuali.kfs.fp.document.validation.impl.DisbursementVoucherDocumentPreRules;
++import org.kuali.kfs.module.purap.PurapConstants;
++import org.kuali.kfs.module.purap.document.PaymentRequestDocument;
+ import org.kuali.kfs.sys.KFSConstants;
+ import org.kuali.kfs.sys.KFSKeyConstants;
++import org.kuali.kfs.sys.KFSPropertyConstants;
++import org.kuali.kfs.sys.businessobject.SourceAccountingLine;
+ import org.kuali.kfs.sys.context.SpringContext;
+ import org.kuali.rice.kns.document.Document;
++import org.kuali.rice.kns.service.BusinessObjectService;
++import org.kuali.rice.kns.service.DataDictionaryService;
+ import org.kuali.rice.kns.service.KualiConfigurationService;
+ import org.kuali.rice.kns.util.ObjectUtils;
++import org.kuali.rice.kns.workflow.service.KualiWorkflowDocument;
+ 
++import edu.arizona.kfs.fp.FPKeyConstants;
++import edu.arizona.kfs.fp.businessobject.DisbursementVoucherSourceAccountingLine;
++import edu.arizona.kfs.fp.businessobject.DisbursementVoucherSourceAccountingLineExtension;
+ import edu.arizona.kfs.fp.document.UaDisbursementVoucherDocument;
++import edu.arizona.kfs.fp.service.UaDisbursementVoucherInvoiceService;
+ 
+ public class UaDisbursementVoucherDocumentPreRules extends DisbursementVoucherDocumentPreRules {
+-
++    protected static final String DUPLICATE_INVOICE_QUESTION_ID = "DVDuplicateInvoice";
++    
++    private UaDisbursementVoucherInvoiceService disbursementVoucherInvoiceService = null;
++    
+     @Override
+     public boolean doPrompts(Document document) {
+         boolean result = super.doPrompts(document);
+@@ -50,10 +77,81 @@
+             }
+         }
+         
++        result &= checkInvoiceNumberDuplicate((DisbursementVoucherDocument) document);
+         
+         return result;
+     }
+     
++    protected boolean checkInvoiceNumberDuplicate(DisbursementVoucherDocument document) {
++        try {
++            // pre-analyze the question to prevent unncessary DB retrievals
++            boolean okToProceed = super.askOrAnalyzeYesNoQuestion(DUPLICATE_INVOICE_QUESTION_ID, "");
++            // if the question was not answered yet, an exception will be thrown by the above line
++            if (!okToProceed) {
++                abortRulesCheck();
++            }
++            return true;
++        }
++        catch (RuntimeException e) {
++            // catch the IsAskingException to prevent the system from asking the question now... instead we'll continue processing so that it'll ask the question
++        }
++
++        KualiWorkflowDocument wfDoc = document.getDocumentHeader().getWorkflowDocument();
++        if (!wfDoc.stateIsInitiated() && !wfDoc.stateIsSaved() && 
++                !(wfDoc.stateIsEnroute() && wfDoc.isApprovalRequested() && wfDoc.getCurrentRouteNodeNames().contains(DisbursementVoucherConstants.RouteLevelNames.CAMPUS))) {
++            return true;
++        }
++        
++        boolean result = true;
++        Set<String> matchingPreqs = new HashSet<String>();
++        Set<String> matchingDvs = new HashSet<String>();
++        for (DisbursementVoucherSourceAccountingLine sourceAccountingLine : (List<DisbursementVoucherSourceAccountingLine>) document.getSourceAccountingLines()) {
++            DisbursementVoucherSourceAccountingLineExtension extension = sourceAccountingLine.getExtension();
++            String invoiceNumber = extension.getInvoiceNumber();
++            if (StringUtils.isNotBlank(invoiceNumber)) {
++                matchingPreqs.addAll(findDuplicatePaymentRequests(document, invoiceNumber));
++                matchingDvs.addAll(findDuplicateDisbursementVouchers(document, invoiceNumber));
++            }
++        }
++
++        if (!matchingDvs.isEmpty() || !matchingPreqs.isEmpty()) {
++            String questionText = SpringContext.getBean(KualiConfigurationService.class).getPropertyString(FPKeyConstants.MESSAGE_DV_DUPLICATE_INVOICE);
++
++            Object[] args = { toCommaDelimitedString(matchingDvs), toCommaDelimitedString(matchingPreqs) };
++            questionText = MessageFormat.format(questionText, args);
++            
++            boolean okToProceed = super.askOrAnalyzeYesNoQuestion(DUPLICATE_INVOICE_QUESTION_ID, questionText);
++            
++            if (!okToProceed) {
++                abortRulesCheck();
++            }
++        }
++        return true;
++    }
++    
++    protected String toCommaDelimitedString(Set<String> documentIds) {
++        if (documentIds == null || documentIds.isEmpty()) {
++            return "N/A";
++        }
++        return StringUtils.join(documentIds, ",");
++    }
++
++    protected Set<String> findDuplicateDisbursementVouchers(DisbursementVoucherDocument document, String invoiceNumber) {
++        DisbursementVoucherPayeeDetail payeeDetail = document.getDvPayeeDetail();
++        return getDisbursementVoucherInvoiceService().findDisbursementVouchersWithDuplicateInvoices(document.getDocumentNumber(),
++                payeeDetail.getDisbVchrPayeeIdNumber(), payeeDetail.getDisbursementVoucherPayeeTypeCode(), invoiceNumber);
++    }
++    
++    protected Set<String> findDuplicatePaymentRequests(DisbursementVoucherDocument document, String invoiceNumber) {
++        DisbursementVoucherPayeeDetail payeeDetail = document.getDvPayeeDetail();
++        if (payeeDetail.isVendor()) {
++            String vendorHeaderGeneratedIdentifier = payeeDetail.getDisbVchrVendorHeaderIdNumber();
++            String vendorDetailAssignedIdentifier = payeeDetail.getDisbVchrVendorDetailAssignedIdNumber();
++            return getDisbursementVoucherInvoiceService().findPaymentRequestsWithDuplicateInvoices(vendorHeaderGeneratedIdentifier, vendorDetailAssignedIdentifier, invoiceNumber);
++        }
++        return Collections.emptySet();
++    }
++
+     /**
+      * Returns true if the state of all the tabs is valid, false otherwise.
+      * 
+@@ -128,4 +226,16 @@
+         return tabStatesOK;
+     }
+ 
++    /**
++     * Gets the disbursementVoucherInvoiceService attribute. 
++     * @return Returns the disbursementVoucherInvoiceService.
++     */
++    public UaDisbursementVoucherInvoiceService getDisbursementVoucherInvoiceService() {
++        if (disbursementVoucherInvoiceService == null) {
++            disbursementVoucherInvoiceService = SpringContext.getBean(UaDisbursementVoucherInvoiceService.class);
++        }
++        return disbursementVoucherInvoiceService;
++    }
++
++    
+ }
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/validation/impl/DisbursementVoucherInvoiceNumberEnteredValidation.java
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/validation/impl/DisbursementVoucherInvoiceNumberEnteredValidation.java	(revision 0)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/validation/impl/DisbursementVoucherInvoiceNumberEnteredValidation.java	(revision 24840)
+@@ -0,0 +1,93 @@
++/*
++ * Copyright 2012 The Kuali Foundation.
++ * 
++ * Licensed under the Educational Community License, Version 1.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ * http://www.opensource.org/licenses/ecl1.php
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package edu.arizona.kfs.fp.document.validation.impl;
++
++import java.util.List;
++
++import org.apache.commons.lang.StringUtils;
++import org.kuali.kfs.fp.businessobject.DisbursementVoucherNonResidentAlienTax;
++import org.kuali.kfs.fp.document.DisbursementVoucherConstants;
++import org.kuali.kfs.fp.document.DisbursementVoucherDocument;
++import org.kuali.kfs.fp.document.service.DisbursementVoucherTaxService;
++import org.kuali.kfs.sys.KFSKeyConstants;
++import org.kuali.kfs.sys.KFSPropertyConstants;
++import org.kuali.kfs.sys.businessobject.AccountingLine;
++import org.kuali.kfs.sys.context.SpringContext;
++import org.kuali.kfs.sys.document.AccountingDocument;
++import org.kuali.kfs.sys.document.authorization.AccountingLineAuthorizer;
++import org.kuali.kfs.sys.document.validation.GenericValidation;
++import org.kuali.kfs.sys.document.validation.event.AttributedDocumentEvent;
++import org.kuali.kfs.sys.document.validation.event.UpdateAccountingLineEvent;
++import org.kuali.kfs.sys.document.validation.impl.AccountingLineAccessibleValidation;
++import org.kuali.rice.kim.bo.Person;
++import org.kuali.rice.kns.util.GlobalVariables;
++import org.kuali.rice.kns.workflow.service.KualiWorkflowDocument;
++
++import edu.arizona.kfs.fp.businessobject.DisbursementVoucherSourceAccountingLineExtension;
++
++public class DisbursementVoucherInvoiceNumberEnteredValidation extends AccountingLineAccessibleValidation {
++    /**
++     * @see org.kuali.kfs.sys.document.validation.Validation#validate(org.kuali.kfs.sys.document.validation.event.AttributedDocumentEvent)
++     */
++    @Override
++    public boolean validate(AttributedDocumentEvent event) {
++        boolean isValid = true;
++        
++        DisbursementVoucherDocument accountingDocument = (DisbursementVoucherDocument) this.getAccountingDocumentForValidation();
++        DisbursementVoucherNonResidentAlienTax nonResidentAlienTax = accountingDocument.getDvNonResidentAlienTax();
++
++        // tax accounting lines don't need to be validated
++        if (nonResidentAlienTax != null) {
++            List<String> taxLineNumbers = SpringContext.getBean(DisbursementVoucherTaxService.class).getNRATaxLineNumbers(nonResidentAlienTax.getFinancialDocumentAccountingLineText());
++            
++            if (taxLineNumbers.contains(this.getAccountingLineForValidation().getSequenceNumber())) {
++                return true;
++            }
++        }
++
++        Person financialSystemUser = GlobalVariables.getUserSession().getPerson();
++        final AccountingLineAuthorizer accountingLineAuthorizer = lookupAccountingLineAuthorizer();
++        final boolean lineIsAccessible = accountingLineAuthorizer.hasEditPermissionOnAccountingLine(accountingDocument, accountingLineForValidation, getAccountingLineCollectionProperty(), financialSystemUser, true);
++        boolean isAccessible = accountingLineAuthorizer.hasEditPermissionOnField(accountingDocument, accountingLineForValidation, getAccountingLineCollectionProperty(), "extension.invoiceNumber", lineIsAccessible, true, financialSystemUser);
++
++        if (isAccessible) {
++            DisbursementVoucherSourceAccountingLineExtension accountingLineExtension = (DisbursementVoucherSourceAccountingLineExtension) accountingLineForValidation.getExtension();
++            if (isInvoiceNumberRequired(accountingDocument, event) && StringUtils.isBlank(accountingLineExtension.getInvoiceNumber())) {
++                GlobalVariables.getMessageMap().putError("extension.invoiceNumber", KFSKeyConstants.ERROR_REQUIRED, "Invoice Number");
++                return false;
++            }
++        }
++        return true;
++    }
++    
++    protected boolean isInvoiceNumberRequired(DisbursementVoucherDocument document, AttributedDocumentEvent event) {
++        KualiWorkflowDocument workflowDocument = document.getDocumentHeader().getWorkflowDocument();
++        if (workflowDocument.stateIsInitiated() || workflowDocument.stateIsSaved()) {
++            return true;
++        }
++        if (workflowDocument.stateIsEnroute() && workflowDocument.isApprovalRequested() &&
++                workflowDocument.getCurrentRouteNodeNames().contains(DisbursementVoucherConstants.RouteLevelNames.CAMPUS)) {
++            return true;
++        }
++        if (event instanceof UpdateAccountingLineEvent && workflowDocument.stateIsEnroute() && workflowDocument.isApprovalRequested()) {
++            // the FO is not allowed to blank out the invoice number, but he isn't required to fill one in 
++            UpdateAccountingLineEvent uale = (UpdateAccountingLineEvent) event;
++            String origInvoiceNumber = ((DisbursementVoucherSourceAccountingLineExtension) uale.getAccountingLine().getExtension()).getInvoiceNumber();
++            return StringUtils.isNotBlank(origInvoiceNumber);   
++        }
++        return false;
++    }
++}
+
+Property changes on: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/validation/impl/DisbursementVoucherInvoiceNumberEnteredValidation.java
+___________________________________________________________________
+Added: svn:executable
+   + *
+Added: svn:mime-type
+   + text/plain
+
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/validation/configuration/DisbursementVoucherValidation.xml
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/validation/configuration/DisbursementVoucherValidation.xml	(revision 24839)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/fp/document/validation/configuration/DisbursementVoucherValidation.xml	(revision 24840)
+@@ -20,4 +20,55 @@
+ 	<bean id="DisbursementVoucher-nonAsciiValidation" class="edu.arizona.kfs.fp.document.validation.impl.DisbursementVoucherHasNonAscii" abstract="true">
+ 	</bean>
+ 
++    <bean id="DisbursementVoucher-accountingLineInvoiceNumberEnteredValidation" class="edu.arizona.kfs.fp.document.validation.impl.DisbursementVoucherInvoiceNumberEnteredValidation" abstract="true">
++        <property name="dataDictionaryService" ref="dataDictionaryService" />
++    </bean>
++    
++	<bean id="DisbursementVoucher-addAccountingLineValidation" parent="DisbursementVoucher-addAccountingLineValidation-parentBean" >
++		<property name="validations">
++			<list merge="true">
++				<bean parent="DisbursementVoucher-accountingLineInvoiceNumberEnteredValidation" scope="prototype">
++					<property name="parameterProperties">
++						<list>
++							<bean parent="accountingDocumentFieldConversion" />
++							<bean parent="accountingLineFieldConversion" />
++						</list>
++					</property>
++					<property name="quitOnFail" value="false" />
++				</bean>
++			</list>
++		</property>
++	</bean>
++
++	<bean id="DisbursementVoucher-updateAccountingLineValidation" parent="DisbursementVoucher-updateAccountingLineValidation-parentBean">
++		<property name="validations">
++			<list merge="true">
++				<bean parent="DisbursementVoucher-accountingLineInvoiceNumberEnteredValidation" scope="prototype">
++					<property name="parameterProperties">
++						<list>
++							<bean parent="accountingDocumentFieldConversion" />
++							<bean parent="updatedAccountingLineFieldConversion" />
++						</list>
++					</property>
++					<property name="quitOnFail" value="false" />
++				</bean>
++			</list>
++		</property>
++	</bean>
++
++	<bean id="DisbursementVoucher-reviewAccountingLineValidation" parent="DisbursementVoucher-reviewAccountingLineValidation-parentBean" >	
++		<property name="validations">
++			<list merge="true">
++				<bean parent="DisbursementVoucher-accountingLineInvoiceNumberEnteredValidation" scope="prototype">
++					<property name="parameterProperties">
++						<list>
++							<bean parent="accountingDocumentFieldConversion" />
++							<bean parent="accountingLineFieldConversion" />
++						</list>
++					</property>
++					<property name="quitOnFail" value="false" />
++				</bean>
++			</list>
++		</property>
++	</bean>
+ </beans>
+\ No newline at end of file
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/module/purap/AzPurapConstants.java
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/module/purap/AzPurapConstants.java	(revision 24839)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/module/purap/AzPurapConstants.java	(revision 24840)
+@@ -64,8 +64,6 @@
+         public static final String BATCH = "BTCH";
+     }
+     
+-    
+-    
+-    
++    public static final String PREQ_DUPLICATE_DV_QUESTION = "PREQ_DUPLICATE_DV_QUESTION";
+ 
+ }
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/module/purap/UaPurapKeyConstants.java
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/module/purap/UaPurapKeyConstants.java	(revision 24839)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/module/purap/UaPurapKeyConstants.java	(revision 24840)
+@@ -23,4 +23,6 @@
+     public static final String WARNING_ADDITIONAL_CHARGES_ACCOUNT_DEFAULTED = "warning.additional.charges.account.defaulted";
+     
+     public static final String ERROR_PO_NO_FULLY_RECEIVED_AND_INVOICED = "error.po.not.fully.received.and.invoiced";
++    
++    public static final String MESSAGE_PREQ_DUPLICATE_DV_INVOICE = "message.preq.duplicate.dv.invoice";
+ }
+Index: financial-system/kfs/trunk/work/src/edu/arizona/kfs/module/purap/document/web/struts/PaymentRequestAction.java
+===================================================================
+--- financial-system/kfs/trunk/work/src/edu/arizona/kfs/module/purap/document/web/struts/PaymentRequestAction.java	(revision 24839)
++++ financial-system/kfs/trunk/work/src/edu/arizona/kfs/module/purap/document/web/struts/PaymentRequestAction.java	(revision 24840)
+@@ -19,6 +19,7 @@
+ import java.util.ArrayList;
+ import java.util.Iterator;
+ import java.util.List;
++import java.util.Set;
+ import java.util.TreeMap;
+ 
+ import javax.servlet.http.HttpServletRequest;
+@@ -28,9 +29,11 @@
+ import org.apache.struts.action.ActionForm;
+ import org.apache.struts.action.ActionForward;
+ import org.apache.struts.action.ActionMapping;
++import org.kuali.kfs.fp.document.DisbursementVoucherConstants;
+ import org.kuali.kfs.module.purap.PurapConstants;
+ import org.kuali.kfs.module.purap.PurapConstants.AccountsPayableDocumentStrings;
+ import org.kuali.kfs.module.purap.PurapConstants.CMDocumentsStrings;
++import org.kuali.kfs.module.purap.PurapConstants.PREQDocumentsStrings;
+ import org.kuali.kfs.module.purap.PurapKeyConstants;
+ import org.kuali.kfs.module.purap.PurapWorkflowConstants;
+ import org.kuali.kfs.module.purap.businessobject.CreditMemoView;
+@@ -53,7 +56,9 @@
+ import org.kuali.rice.kim.service.PersonService;
+ import org.kuali.rice.kns.bo.AdHocRoutePerson;
+ import org.kuali.rice.kns.bo.Note;
++import org.kuali.rice.kns.question.ConfirmationQuestion;
+ import org.kuali.rice.kns.service.DocumentService;
++import org.kuali.rice.kns.service.KualiConfigurationService;
+ import org.kuali.rice.kns.service.NoteService;
+ import org.kuali.rice.kns.util.GlobalVariables;
+ import org.kuali.rice.kns.util.KNSConstants;
+@@ -62,6 +67,9 @@
+ import org.kuali.rice.kns.workflow.service.KualiWorkflowDocument;
+ import org.kuali.rice.kns.workflow.service.KualiWorkflowInfo;
+ 
++import edu.arizona.kfs.fp.FPKeyConstants;
++import edu.arizona.kfs.fp.service.UaDisbursementVoucherInvoiceService;
++import edu.arizona.kfs.module.purap.AzPurapConstants;
+ import edu.arizona.kfs.module.purap.UaPurapKeyConstants;
+ import edu.arizona.kfs.module.purap.document.UaPaymentRequestDocument;
+ 
+@@ -345,4 +353,52 @@
+         return super.blanketApprove(mapping, form, request, response);
+     }
+ 
++    /**
++     * Overridden to check for duplicated DV's as well
++     * @see org.kuali.kfs.module.purap.document.web.struts.PaymentRequestAction#performDuplicatePaymentRequestAndEncumberFiscalYearCheck(org.apache.struts.action.ActionMapping, org.apache.struts.action.ActionForm, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse, org.kuali.kfs.module.purap.document.PaymentRequestDocument)
++     */
++    @Override
++    protected ActionForward performDuplicatePaymentRequestAndEncumberFiscalYearCheck(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response, PaymentRequestDocument paymentRequestDocument) throws Exception {
++        // first, let's rely on the super class to check for preqs that use the same invoice number and vendor
++        // if there's a duplicate preq, then the value returned will be non-null (i.e. forward the user to the question page)
++        ActionForward forwardIfDuplicatePREQ = super.performDuplicatePaymentRequestAndEncumberFiscalYearCheck(mapping, form, request, response, paymentRequestDocument);
++        if (forwardIfDuplicatePREQ != null) {
++            return forwardIfDuplicatePREQ;
++        }
++        
++        Object question = request.getParameter(KFSConstants.QUESTION_INST_ATTRIBUTE_NAME);
++        Object buttonClicked = request.getParameter(KFSConstants.QUESTION_CLICKED_BUTTON);
++        if (AzPurapConstants.PREQ_DUPLICATE_DV_QUESTION.equals(question)) {
++            if (ConfirmationQuestion.NO.equals(buttonClicked)) {
++                paymentRequestDocument.setStatusCode(PurapConstants.PaymentRequestStatuses.INITIATE);
++                return mapping.findForward(KFSConstants.MAPPING_BASIC);
++            }
++            else {
++                return null;
++            }
++        }
++        
++        // if it was null, then that means the PREQ check went OK, and we'll now check for duplicate DV's
++        PaymentRequestDocument preq = ((PaymentRequestForm) form).getPaymentRequestDocument();
++        PurchaseOrderDocument po = preq.getPurchaseOrderDocument();
++        Set<String> matchingDVs = SpringContext.getBean(UaDisbursementVoucherInvoiceService.class).findDisbursementVouchersWithDuplicateInvoices(null, po.getVendorNumber(), DisbursementVoucherConstants.DV_PAYEE_TYPE_VENDOR, preq.getInvoiceNumber());
++        if (matchingDVs != null && !matchingDVs.isEmpty()) {
++            String questionText = SpringContext.getBean(KualiConfigurationService.class).getPropertyString(UaPurapKeyConstants.MESSAGE_PREQ_DUPLICATE_DV_INVOICE);
++
++            Object[] args = { toCommaDelimitedString(matchingDVs) };
++            questionText = MessageFormat.format(questionText, args);
++            
++            return this.performQuestionWithoutInput(mapping, form, request, response, AzPurapConstants.PREQ_DUPLICATE_DV_QUESTION, questionText,
++                    KFSConstants.CONFIRMATION_QUESTION, KFSConstants.ROUTE_METHOD, "");
++
++        }
++        return null;
++    }
++
++    protected String toCommaDelimitedString(Set<String> documentIds) {
++        if (documentIds == null || documentIds.isEmpty()) {
++            return "N/A";
++        }
++        return StringUtils.join(documentIds, ",");
++    }
+ }
+Index: financial-system/kfs/trunk/.classpath
+===================================================================
+--- financial-system/kfs/trunk/.classpath	(revision 24839)
++++ financial-system/kfs/trunk/.classpath	(revision 24840)
+@@ -7,11 +7,11 @@
+ 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+ 	<classpathentry exported="true" kind="var" path="TOMCAT_LIB_HOME/servlet-api.jar"/>
+ 	<classpathentry exported="true" kind="var" path="TOMCAT_LIB_HOME/jsp-api.jar"/>
+-	<classpathentry kind="var" path="DRIVERS_DIRECTORY/ojdbc6.jar"/>
++	<classpathentry kind="var" path="DRIVERS_DIRECTORY/ojdbc6.jar" sourcepath="/DRIVERS_DIRECTORY/ojdbc6.jar"/>
+ 	<classpathentry kind="var" path="DRIVERS_DIRECTORY/mysql-connector-java-5.0.5-bin.jar"/>
+-	<classpathentry exported="true" kind="lib" path="build/external/appserver/p6spy-1.3-patched.jar"/>
++	<classpathentry exported="true" kind="lib" path="build/external/appserver/p6spy-1.3-patched.jar" sourcepath="/home/warren/p6spy-src-1.3.zip"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/activation-1.0.2.jar"/>
+-	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/backport-util-concurrent-2.1.jar"/>
++	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/backport-util-concurrent-2.1.jar" sourcepath="/mnt/c/java/mvnrepo/backport-util-concurrent/backport-util-concurrent/2.1/backport-util-concurrent-2.1-sources.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/commons-beanutils-1.7.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/commons-codec-1.3.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/commons-collections-3.2.jar"/>
+@@ -20,10 +20,10 @@
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/commons-httpclient-3.0.1.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/commons-io-1.4.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/commons-pool-1.5.5.jar"/>
+-	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/db-ojb-1.0.4-kuali-mods-debug.jar"/>
++	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/db-ojb-1.0.4-kuali-mods-debug.jar" sourcepath="/home/warren/db-ojb-1.0.4-kuali-src.zip"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/displaytag-1.1.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/dwr-1.1.4.jar"/>
+-	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/itext-1.4.8.jar"/>
++	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/itext-1.4.8.jar" sourcepath="/mnt/c/java/mvnrepo/com/lowagie/itext/1.4.8/itext-1.4.8-sources.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/mail-1.4.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/jdom-1.0.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/oscache-2.3.2.jar"/>
+@@ -31,7 +31,7 @@
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/saaj-1.2.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/spring-2.0.4.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/spring-modules-ojb-0.8a.jar"/>
+-	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/struts-1.2.9.jar"/>
++	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/struts-1.2.9.jar" sourcepath="/mnt/c/java/mvnrepo/struts/struts/1.2.9/struts-1.2.9-sources.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/xercesImpl-2.7.1.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/xstream-1.2.2.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="test/lib/junit-3.8.1.jar"/>
+@@ -57,7 +57,7 @@
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/wsdl4j-1.6.2.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/jaxen-1.1.1.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/rice-api-1.0.1.jar"/>
+-	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/rice-impl-1.0.1.jar"/>
++	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/rice-impl-1.0.1.jar" sourcepath="/work/java/ua-linux/rice-1.0.1"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/opencsv-1.8.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/cxf-2.1.5.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/jaxb-impl-2.1.9.jar"/>
+@@ -89,7 +89,7 @@
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/saaj-api-1.3.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/saaj-impl-1.3.2.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/spring-security-core-2.0.4.jar"/>
+-	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/struts-el-1.2.9.jar"/>
++	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/struts-el-1.2.9.jar" sourcepath="/mnt/c/java/mvnrepo/struts/struts-el/1.2.9/struts-el-1.2.9-sources.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/taglibs-jstl-1.1.2.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/taglibs-standard-1.1.2.jar"/>
+ 	<classpathentry exported="true" kind="lib" path="work/web-root/WEB-INF/lib/velocity-1.5.jar"/>
