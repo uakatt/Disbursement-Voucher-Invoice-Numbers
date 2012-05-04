@@ -26,21 +26,21 @@ this README contains several informative sections:
   revision numbers that are _not_ included in the patches, or raw patches, but that touched one
   or more key files involved in this modification.
 
-<h2><a name="jiras">Jiras</a></h2>
+<h2>Jiras</h2>
 
 This is a list of Jira tickets at the University of Arizona that relate to this modification. The subversion revisions tagged against each such jira are also listed:
 
 * **KFSI-653**: (The main jira for this modification)<br />
   revisions: #24826, #24840
 
-<h2><a name="liquibase_changesets">Liquibase Changesets</a></h2>
+<h2>Liquibase Changesets</h2>
 
 * `update/KITT-3083.xml` saw the following activity:
   * created in [#24826](https://subversion.uits.arizona.edu/kitt-anon/kitt/!svn/bc/24826//financial-system/kfs-cfg-dbs/trunk/update/KITT-3083.xml).
 
 (1 changes among 1 files)
 
-<h2><a name="patch_files">Patch Files</a></h2>
+<h2>Patch Files</h2>
 
 This is a list of all of the patches for revisions that affected files in `trunk/`. The filenames in each has been modified, for easy digestion. UA's subversion server manages many Kuali projects in one Subversion project, so a file path like:
 
@@ -56,7 +56,7 @@ src/org/kuali/kfs...
 
 * [`patches/24840_KFSI-653_cleaned.diff`](Disbursement-Voucher-Invoice-Numbers/blob/master/patches/24840_KFSI-653_cleaned.diff) is the patch file for #24840.
 
-<h2><a name="revisions">Revisions</a></h2>
+<h2>Revisions</h2>
 
 This is an ordered list of revisions that relate to this modification. There may not be a patch
 file for every revision listed below for the following reasons:
@@ -103,7 +103,7 @@ Files **modified** for this modification (11 files)
     /work/src/edu/arizona/kfs/module/purap/UaPurapKeyConstants.java
     /work/src/edu/arizona/kfs/module/purap/document/web/struts/PaymentRequestAction.java
 
-<h2><a name="post_mod_changes">Post Mod Changes</a></h2>
+<h2>Post Mod Changes</h2>
 
 For each file that was changed or added for this modification, I've looked at its history in subversion (`svn log <file_name>`) to find whether later fixes were committed against this modification that I might have missed. There were some :) They may be fixes to the modification, or further enhancements, or changes completely unrelated. Please contact the UA for more information about a given revision number, or Jira ticket. Here they are:
 
