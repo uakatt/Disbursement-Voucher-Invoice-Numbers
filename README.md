@@ -9,9 +9,9 @@ this README contains several informative sections:
 * <a href="#jiras">List of Jiras</a> - This list contains every Jira ticket at the University of Arizona
   that relates to this modification. It provides reverse documentation back to the developers at
   the UA in case of questions regarding how this patch package was created.
-* <a href="#liquibase_changesets">List of Liquibase Changesets</a> - This list contains any
+* <a href="#liquibase-changesets">List of Liquibase Changesets</a> - This list contains any
   liquibase changeset files that were associated with this modification.
-* <a href="#patch_files">List of Patch Files</a> - This is a list of each patch file that needs
+* <a href="#patch-files">List of Patch Files</a> - This is a list of each patch file that needs
   to be applied to the KFS source code in order to realize the modification. This list does _not_
   include patch files for revisions that didn't touch the `trunk/` at the UA.
   Before a modification was merged with `trunk/`, it may have been tweaked, reworked, refactored,
@@ -22,7 +22,7 @@ this README contains several informative sections:
   of patch files is a better reference of which are these revisions.
 * <a href="#files">Lists of Files</a> - These lists contain every file that was created,
   modified, or deleted for this enhancement.
-* <a href="#post_mod_changes">List of Post-Modification Changes</a> - This list contains
+* <a href="#post-mod-changes">List of Post-Modification Changes</a> - This list contains
   revision numbers that are _not_ included in the patches, or raw patches, but that touched one
   or more key files involved in this modification.
 
