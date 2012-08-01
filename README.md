@@ -22,6 +22,8 @@ this README contains several informative sections:
   of patch files is a better reference of which are these revisions.
 * <a href="#files">Lists of Files</a> - These lists contain every file that was created,
   modified, or deleted for this enhancement.
+* <a href="#known-issues">List of Known Issues</a> - This list contains known issues related to
+  this enhancement.
 * <a href="#post-mod-changes">List of Post-Modification Changes</a> - This list contains
   revision numbers that are _not_ included in the patches, or raw patches, but that touched one
   or more key files involved in this modification.
@@ -102,6 +104,14 @@ Files **modified** for this modification (11 files)
     /work/src/edu/arizona/kfs/module/purap/AzPurapConstants.java
     /work/src/edu/arizona/kfs/module/purap/UaPurapKeyConstants.java
     /work/src/edu/arizona/kfs/module/purap/document/web/struts/PaymentRequestAction.java
+
+<h2>Known Issues</h2>
+
+These are issues, related to this enhancement, that are currently documented and open at the UA. the UA may be contacted for more information regarding each issue (Has it been prioritized? Has work begun? How to recreate? ...). Any institution receiving this enhancement is also welcome to fix any known issue and contribute back to the UA. :) (3 known issues)
+
+* KATTS-179: "ACH and check payments made via Disbursement Vouchers do not have invoice numbers on remittance"
+* KATTS-507: "Search for Disbursement Vouchers in KFS and PDP should include the Invoice Number field"
+* KATTS-424: "Need to update our DV Invoice Mod to use the Purchasing Module service to check for duplicate invoices. "
 
 <h2>Post Mod Changes</h2>
 
