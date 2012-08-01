@@ -24,9 +24,6 @@ this README contains several informative sections:
   modified, or deleted for this enhancement.
 * <a href="#known-issues">List of Known Issues</a> - This list contains known issues related to
   this enhancement.
-* <a href="#post-mod-changes">List of Post-Modification Changes</a> - This list contains
-  revision numbers that are _not_ included in the patches, or raw patches, but that touched one
-  or more key files involved in this modification.
 
 <h2>Jiras</h2>
 
@@ -124,20 +121,4 @@ These are issues, related to this enhancement, that are currently documented and
   Resolution as of Aug  1, 2012: Unresolved
   <br />
   Priority as of Aug  1, 2012: Major
-
-<h2>Post Mod Changes</h2>
-
-For each file that was changed or added for this modification, I've looked at its history in subversion (`svn log <file_name>`) to find whether later fixes were committed against this modification that I might have missed. There were some :) They may be fixes to the modification, or further enhancements, or changes completely unrelated. Please contact the UA for more information about a given revision number, or Jira ticket. Here they are:
-
-*   **#24923** touches `/work/src/arizona-ApplicationResources.properties`.
-
-    > KFSI-6468 MOD - Implement the Simple Balances Screen - Bug fixes.
-
-(1 revisions)
-
-The following files were ignored here:
-
-    .classpath
-
-This means, for example, that `.classpath` was changed for this modification, but `.classpath`'s history was not used to build this list of revisions.
 
