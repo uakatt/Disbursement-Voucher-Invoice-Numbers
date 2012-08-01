@@ -22,8 +22,16 @@ this README contains several informative sections:
   of patch files is a better reference of which are these revisions.
 * <a href="#files">Lists of Files</a> - These lists contain every file that was created,
   modified, or deleted for this enhancement.
+* <a href="#extra-local-files">List of Local Files</a> - This list contains any extra files that were not
+  explicitly included in the enhancement. The enhancement may rely on these files, and they may
+  not be a part of the original release. They may also include functional and technical specifications.
 * <a href="#known-issues">List of Known Issues</a> - This list contains known issues related to
   this enhancement.
+
+Disclaimer
+==========
+
+> The permissions SQL that allow FSO AP Travel Specialists to edit the invoice number on DVs is included in the <a href="#extra-local-files">Extra Local Files</a> list.
 
 <h2>Jiras</h2>
 
@@ -101,6 +109,12 @@ Files **modified** for this modification (11 files)
     /work/src/edu/arizona/kfs/module/purap/AzPurapConstants.java
     /work/src/edu/arizona/kfs/module/purap/UaPurapKeyConstants.java
     /work/src/edu/arizona/kfs/module/purap/document/web/struts/PaymentRequestAction.java
+
+<h2>Extra Local Files</h2>
+
+Extra local files for this modification that have been included for some reason or another. Most likely, these files are not code, but instead might be specifications, or other documentation. (1 files)
+
+* [`extra_files/permissions.sql`](Disbursement-Voucher-Invoice-Numbers/blob/master/extra_files/permissions.sql)
 
 <h2>Known Issues</h2>
 
