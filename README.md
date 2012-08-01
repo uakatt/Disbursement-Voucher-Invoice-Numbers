@@ -109,9 +109,21 @@ Files **modified** for this modification (11 files)
 
 These are issues, related to this enhancement, that are currently documented and open at the UA. the UA may be contacted for more information regarding each issue (Has it been prioritized? Has work begun? How to recreate? ...). Any institution receiving this enhancement is also welcome to fix any known issue and contribute back to the UA. :) (3 known issues)
 
-* KATTS-179: "ACH and check payments made via Disbursement Vouchers do not have invoice numbers on remittance"
-* KATTS-507: "Search for Disbursement Vouchers in KFS and PDP should include the Invoice Number field"
-* KATTS-424: "Need to update our DV Invoice Mod to use the Purchasing Module service to check for duplicate invoices. "
+* **KATTS-179:** "ACH and check payments made via Disbursement Vouchers do not have invoice numbers on remittance"
+  <br />
+  Resolution as of Aug  1, 2012: Unresolved
+  <br />
+  Priority as of Aug  1, 2012: Critical
+* **KATTS-507:** "Search for Disbursement Vouchers in KFS and PDP should include the Invoice Number field"
+  <br />
+  Resolution as of Aug  1, 2012: Unresolved
+  <br />
+  Priority as of Aug  1, 2012: Critical
+* **KATTS-424:** "Need to update our DV Invoice Mod to use the Purchasing Module service to check for duplicate invoices. "
+  <br />
+  Resolution as of Aug  1, 2012: Unresolved
+  <br />
+  Priority as of Aug  1, 2012: Major
 
 <h2>Post Mod Changes</h2>
 
