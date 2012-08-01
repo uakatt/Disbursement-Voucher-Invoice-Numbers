@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog/1.9"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
+ 
+  <changeSet id="$Revision$" author="$Author$">
+  	<createTable tableName="FP_DV_ACCT_LINE_EXT_T">
+      <column name="FDOC_NBR" type="VARCHAR2(14 BYTE)">
+        <constraints primaryKey="true" primaryKeyName="FP_DV_ACCT_LINE_EXT_TP1" nullable="false" />
+      </column>
+      <column name="FDOC_LINE_NBR" type="NUMBER(7,0)">
+        <constraints primaryKey="true" primaryKeyName="FP_DV_ACCT_LINE_EXT_TP1" nullable="false" />
+      </column>
+      <column name="FDOC_LN_TYP_CD" type="VARCHAR2(1 BYTE)">
+        <constraints primaryKey="true" primaryKeyName="FP_DV_ACCT_LINE_EXT_TP1" nullable="false" />
+      </column>
+      <column name="OBJ_ID" type="VARCHAR2(36 BYTE)">
+        <constraints unique="true" uniqueConstraintName="FP_DV_ACCT_LINE_EXT_TUOID" nullable="false" />
+      </column>
+      <column name="VER_NBR" type="NUMBER(8,0)" defaultValueNumeric="1">
+        <constraints nullable="false"/>
+      </column>
+      <column name="INV_NBR" type="VARCHAR2(25 BYTE)" />
+    </createTable>
+
+	<sql splitStatements="false" endDelimiter=";"><![CDATA[
+		declare
+			permId krim_perm_t.perm_id%TYPE;
+			
+		begin
+			insert into KRIM_PERM_T (PERM_ID,OBJ_ID,VER_NBR,PERM_TMPL_ID,NMSPC_CD,NM,DESC_TXT,ACTV_IND)
+			values (krim_perm_id_s.nextval,sys_guid(),1,(select perm_tmpl_id from kulowner.krim_perm_tmpl_t where nmspc_cd='KFS-SYS' and nm='Modify Accounting Lines'),'KFS-FP','Modify Accounting Lines','Allows users to modify the invoice number of Source accounting lines on a Disbursement Voucher document that is at the Campus Node of routing.','Y')
+			returning PERM_ID into permId;
+			
+			insert into KRIM_PERM_ATTR_DATA_T (ATTR_DATA_ID,OBJ_ID,VER_NBR,PERM_ID,KIM_TYP_ID,KIM_ATTR_DEFN_ID,ATTR_VAL)
+			values (krim_attr_data_id_s.nextval,sys_guid(),1,permId,(select kim_typ_id from kulowner.krim_typ_t where nmspc_cd = 'KR-SYS' and nm like '%Document Type, Routing Node%'),(select kim_attr_defn_id from kulowner.krim_attr_defn_t where nm='documentTypeName' and nmspc_cd='KR-WKFLW'),'DV');
+			
+			insert into KRIM_PERM_ATTR_DATA_T (ATTR_DATA_ID,OBJ_ID,VER_NBR,PERM_ID,KIM_TYP_ID,KIM_ATTR_DEFN_ID,ATTR_VAL)
+			values (krim_attr_data_id_s.nextval,sys_guid(),1,permId,(select kim_typ_id from kulowner.krim_typ_t where nmspc_cd = 'KR-SYS' and nm like '%Document Type, Routing Node%'),(select kim_attr_defn_id from kulowner.krim_attr_defn_t where nm='routeNodeName' and nmspc_cd='KR-WKFLW'),'Campus');
+			
+			insert into KRIM_PERM_ATTR_DATA_T (ATTR_DATA_ID,OBJ_ID,VER_NBR,PERM_ID,KIM_TYP_ID,KIM_ATTR_DEFN_ID,ATTR_VAL)
+			values (krim_attr_data_id_s.nextval,sys_guid(),1,permId,(select kim_typ_id from kulowner.krim_typ_t where nmspc_cd = 'KR-SYS' and nm like '%Document Type, Routing Node%'),(select kim_attr_defn_id from kulowner.krim_attr_defn_t where nm='propertyName' and nmspc_cd='KR-NS'),'sourceAccountingLines.extension.invoiceNumber');
+			
+			insert into KRIM_ROLE_PERM_T (ROLE_PERM_ID,OBJ_ID,VER_NBR,ROLE_ID,PERM_ID,ACTV_IND)
+			values (krim_role_perm_id_s.nextval,sys_guid(),1,(select role_id from kulowner.krim_role_t where role_nm='Document Editor' and nmspc_cd='KR-NS'),permId,'Y');
+		end;
+    ]]>
+    </sql>
+
+	<rollback>
+	<sql splitStatements="false" endDelimiter=";"><![CDATA[
+		declare
+			permId krim_perm_t.perm_id%TYPE;
+		begin
+			select perm_id into permId from krim_perm_t where nmspc_cd='KFS-FP' and nm='Modify Accounting Lines' and desc_txt='Allows users to modify the invoice number of Source accounting lines on a Disbursement Voucher document that is at the Campus Node of routing.';
+		
+			delete from KRIM_ROLE_PERM_T
+			where perm_id=permId;
+			
+			delete from KRIM_PERM_ATTR_DATA_T
+			where perm_id=permId;
+		
+			delete from KRIM_PERM_T
+			where perm_id=permId;
+		end;	
+	]]>
+    </sql>
+    <sql><![CDATA[
+    	drop table FP_DV_ACCT_LINE_EXT_T;
+    ]]>
+    </sql>
+	</rollback>
+  </changeSet>
+</databaseChangeLog>

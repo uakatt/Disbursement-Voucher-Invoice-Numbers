@@ -36,7 +36,7 @@ This is a list of Jira tickets at the University of Arizona that relate to this 
 <h2>Liquibase Changesets</h2>
 
 * `update/KITT-3083.xml` saw the following activity:
-  * created in [#24826](https://subversion.uits.arizona.edu/kitt-anon/kitt/!svn/bc/24826//financial-system/kfs-cfg-dbs/trunk/update/KITT-3083.xml).
+  * created in #24826 (resultant file: [`whole_files/r24826/KITT-3083.xml`](Disbursement-Voucher-Invoice-Numbers/blob/master/whole_files/r24826/KITT-3083.xml)).
 
 (1 changes among 1 files)
 
@@ -107,7 +107,7 @@ Files **modified** for this modification (11 files)
 
 For each file that was changed or added for this modification, I've looked at its history in subversion (`svn log <file_name>`) to find whether later fixes were committed against this modification that I might have missed. There were some :) They may be fixes to the modification, or further enhancements, or changes completely unrelated. Please contact the UA for more information about a given revision number, or Jira ticket. Here they are:
 
-*   **#24923** touches /work/src/arizona-ApplicationResources.properties.
+*   **#24923** touches `/work/src/arizona-ApplicationResources.properties`.
 
     > KFSI-6468 MOD - Implement the Simple Balances Screen - Bug fixes.
 
