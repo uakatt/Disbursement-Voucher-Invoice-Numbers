@@ -22,6 +22,9 @@ this README contains several informative sections:
   of patch files is a better reference of which are these revisions.
 * <a href="#files">Lists of Files</a> - These lists contain every file that was created,
   modified, or deleted for this enhancement.
+* <a href="#extra-files">List of Extra Files</a> - This list contains any extra files that were not
+  explicitly changed during the enhancement. The enhancement may rely on these files, and they may
+  not be a part of the original release.
 * <a href="#extra-local-files">List of Local Files</a> - This list contains any extra files that were not
   explicitly included in the enhancement. The enhancement may rely on these files, and they may
   not be a part of the original release. They may also include functional and technical specifications.
@@ -110,6 +113,15 @@ Files **modified** for this modification (11 files)
     /work/src/edu/arizona/kfs/module/purap/UaPurapKeyConstants.java
     /work/src/edu/arizona/kfs/module/purap/document/web/struts/PaymentRequestAction.java
 
+<h2>Extra Files</h2>
+
+Extra files for this modification that have been included for some reason or another. Most likely, these files did not exist in Foundation KFS 3.0, but are referenced in this enhancement. (4 files)
+
+    work/src/edu/arizona/kfs/fp/document/UaDisbursementVoucherDocument.java
+    work/src/edu/arizona/kfs/fp/document/validation/impl/UaDisbursementVoucherDocumentPreRules.java
+    work/src/edu/arizona/kfs/module/purap/AzPurapConstants.java
+    work/src/edu/arizona/kfs/module/purap/UaPurapKeyConstants.java
+
 <h2>Extra Local Files</h2>
 
 Extra local files for this modification that have been included for some reason or another. Most likely, these files are not code, but instead might be specifications, or other documentation. (1 files)
@@ -122,17 +134,17 @@ These are issues, related to this enhancement, that are currently documented and
 
 * **KATTS-179:** "ACH and check payments made via Disbursement Vouchers do not have invoice numbers on remittance"
   <br />
-  Resolution as of Aug  1, 2012: Unresolved
+  Resolution as of Oct 29, 2012: Unresolved
   <br />
-  Priority as of Aug  1, 2012: Critical
+  Priority as of Oct 29, 2012: Critical
 * **KATTS-507:** "Search for Disbursement Vouchers in KFS and PDP should include the Invoice Number field"
   <br />
-  Resolution as of Aug  1, 2012: Unresolved
+  Resolution as of Oct 29, 2012: Unresolved
   <br />
-  Priority as of Aug  1, 2012: Critical
+  Priority as of Oct 29, 2012: Critical
 * **KATTS-424:** "Need to update our DV Invoice Mod to use the Purchasing Module service to check for duplicate invoices. "
   <br />
-  Resolution as of Aug  1, 2012: Unresolved
+  Resolution as of Oct 29, 2012: Unresolved
   <br />
-  Priority as of Aug  1, 2012: Major
+  Priority as of Oct 29, 2012: Major
 
