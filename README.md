@@ -134,17 +134,17 @@ These are issues, related to this enhancement, that are currently documented and
 
 * **KATTS-179:** "ACH and check payments made via Disbursement Vouchers do not have invoice numbers on remittance"
   <br />
-  Resolution as of Oct 29, 2012: Unresolved
+  Resolution as of Jan 31, 2013: Unresolved
   <br />
-  Priority as of Oct 29, 2012: Critical
-* **KATTS-507:** "Search for Disbursement Vouchers in KFS and PDP should include the Invoice Number field"
+  Priority as of Jan 31, 2013: Major
+* **KATTS-507:** "Search for Disbursement Vouchers in KFS should include the Invoice Number field"
   <br />
-  Resolution as of Oct 29, 2012: Unresolved
+  Resolution as of Jan 31, 2013: Released
   <br />
-  Priority as of Oct 29, 2012: Critical
+  Priority as of Jan 31, 2013: Critical
 * **KATTS-424:** "Need to update our DV Invoice Mod to use the Purchasing Module service to check for duplicate invoices. "
   <br />
-  Resolution as of Oct 29, 2012: Unresolved
+  Resolution as of Jan 31, 2013: Unresolved
   <br />
-  Priority as of Oct 29, 2012: Major
+  Priority as of Jan 31, 2013: Major
 
